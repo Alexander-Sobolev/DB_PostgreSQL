@@ -2,11 +2,14 @@ import colors from 'colors'
 import dotenv from 'dotenv'
 import express from 'express'
 import morgan from 'morgan'
+import path from 'path'
+
+import { errorHandler, notFound } from './App/middleware/error.middleware.js'
 
 import authRoutes from './App/auth/auth.routes.js'
-import userRoutes from './App/user/user.routes.js'
+import exerciseRoutes from './App/exercise/exercise.routes.js'
 import { prisma } from './App/prisma.js'
-import { errorHandler, notFound } from './App/middleware/error.middleware.js'
+import userRoutes from './App/user/user.routes.js'
 
 dotenv.config()
 
@@ -16,8 +19,14 @@ async function main() {
 	if (process.env.NODE_ENV === 'development') app.use(morgan('dev'))
 
 	app.use(express.json())
+
+	const __dirname = path.resolve()
+
+	app.use('/uploads', express.static(path.join(__dirname, '/uploads')))
+
 	app.use('/api/auth', authRoutes)
 	app.use('/api/users', userRoutes)
+	app.use('/api/exercises', exerciseRoutes)
 
 	app.use(notFound)
 	app.use(errorHandler)
@@ -33,11 +42,12 @@ async function main() {
 	)
 }
 
-main().then(async () => {
-	await prisma.$disconnect()
+main()
+	.then(async () => {
+		await prisma.$disconnect()
 	})
-.catch(async (e) => {
-	console.error(e)
-	await prisma.$disconnect()
-	process.exit(1)
-})
+	.catch(async (e) => {
+		console.error(e)
+		await prisma.$disconnect()
+		process.exit(1)
+	})
